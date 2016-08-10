@@ -6,11 +6,11 @@ using System;
 
 namespace FastAdapter.Core
 {
-    public abstract class AbstractAdapter<IItem> : RecyclerView.Adapter, IAdapter<IItem>
+    public abstract class AbstractAdapter<T, VH> : RecyclerView.Adapter, IAdapter<T, VH> where VH : RecyclerView.ViewHolder where T : class
     {
         //private AbstractAdapter mParentAdapter;
         //keep a reference to the FastAdapter which contains the base logic
-        private FastAdapter<IItem> mFastAdapter;
+        private FastAdapter<T, VH> mFastAdapter;
 
         /**
          * Wrap the FastAdapter with this AbstractAdapter and keep it's reference to forward all events correctly
@@ -18,7 +18,7 @@ namespace FastAdapter.Core
          * @param fastAdapter the FastAdapter which contains the base logic
          * @return this
          */
-        public AbstractAdapter<IItem> Wrap(FastAdapter<IItem> fastAdapter)
+        public AbstractAdapter<T, VH> Wrap(FastAdapter<T, VH> fastAdapter)
         {
             //this.mParentAdapter = abstractAdapter;
             this.mFastAdapter = fastAdapter;
@@ -32,7 +32,7 @@ namespace FastAdapter.Core
          * @param abstractAdapter an AbstractWrapper which wraps another AbstractAdapter or FastAdapter
          * @return this
          */
-        public AbstractAdapter<IItem> Wrap(IAdapter<IItem> abstractAdapter)
+        public AbstractAdapter<T, VH> Wrap(IAdapter<T, VH> abstractAdapter)
         {
             //this.mParentAdapter = abstractAdapter;
             this.mFastAdapter = abstractAdapter.FastAdapter;
@@ -97,7 +97,7 @@ namespace FastAdapter.Core
          * @return the reference to the FastAdapter
          */
         
-        public FastAdapter<IItem> FastAdapter
+        public FastAdapter<T, VH> FastAdapter
         {
             get { return mFastAdapter; }
         }
@@ -108,7 +108,7 @@ namespace FastAdapter.Core
          * @param position
          * @return
          */
-        public IItem this[int index]
+        public IItem<T, VH> this[int index]
         {
             get { return mFastAdapter.GetItem(index); }
         }
@@ -189,7 +189,7 @@ namespace FastAdapter.Core
             }
         }
 
-        public List<IItem> AdapterItems
+        public List<IItem<T, VH>> AdapterItems
         {
             get
             {
@@ -276,7 +276,7 @@ namespace FastAdapter.Core
          *
          * @param items
          */
-        public void MapPossibleTypes(IEnumerable<IItem> items)
+        public void MapPossibleTypes(IEnumerable<IItem<T, VH>> items)
         {
             if (items != null)
             {
@@ -292,17 +292,17 @@ namespace FastAdapter.Core
          *
          * @param item
          */
-        public void MapPossibleType(IItem item)
+        public void MapPossibleType(IItem<T, VH> item)
         {
             mFastAdapter.RegisterTypeInstance(item);
         }
 
-        public IItem GetAdapterItem(int position)
+        public IItem<T, VH> GetAdapterItem(int position)
         {
             throw new NotImplementedException();
         }
 
-        public int GetAdapterPosition(IItem item)
+        public int GetAdapterPosition(IItem<T, VH> item)
         {
             throw new NotImplementedException();
         }

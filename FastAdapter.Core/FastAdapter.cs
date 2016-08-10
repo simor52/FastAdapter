@@ -11,18 +11,18 @@ using FastAdapter.Core;
 
 namespace FastAdapter.Core
 {
-    public abstract class FastAdapter<Item> : RecyclerView.Adapter
+    public abstract class FastAdapter<T, VH> : RecyclerView.Adapter where VH : RecyclerView.ViewHolder where T : class
     {
         protected const string BUNDLE_SELECTIONS = "bundle_selections";
         protected const string BUNDLE_EXPANDED = "bundle_expanded";
         // we remember all adapters
         //priority queue...
-        private Dictionary<int, IAdapter<IItem>> mAdapters = new Dictionary<int, IAdapter<IItem>>();
+        private Dictionary<int, IAdapter<T, VH>> mAdapters = new Dictionary<int, IAdapter<T, VH>>();
         // we remember all possible types so we can create a new view efficiently
-        private Dictionary<int, IItem> mTypeInstances = new Dictionary<int, IItem>();
+        private Dictionary<int, IItem<T, VH>> mTypeInstances = new Dictionary<int, IItem<T, VH>>();
         // cache the sizes of the different adapters so we can access the items more performant 
 
-        private SortedDictionary<int, IAdapter<IItem>> mAdapterSizes = new SortedDictionary<int, IAdapter<IItem>>();
+        private SortedDictionary<int, IAdapter<T, VH>> mAdapterSizes = new SortedDictionary<int, IAdapter<T, VH>>();
         // the total size
         private int mGlobalSize = 0;
 
@@ -49,11 +49,11 @@ namespace FastAdapter.Core
         private SparseIntArray mExpanded = new SparseIntArray();
 
         // the listeners which can be hooked on an item
-        private IOnClickListener<IItem> mOnPreClickListener;
-        private IOnClickListener<IItem> mOnClickListener;
-        private IOnLongClickListener<IItem> mOnPreLongClickListener;
-        private IOnLongClickListener<IItem> mOnLongClickListener;
-        private IOnTouchListener<IItem> mOnTouchListener;
+        private IOnClickListener<IItem<T, VH>> mOnPreClickListener;
+        private IOnClickListener<IItem<T, VH>> mOnClickListener;
+        private IOnLongClickListener<IItem<T, VH>> mOnPreLongClickListener;
+        private IOnLongClickListener<IItem<T, VH>> mOnLongClickListener;
+        private IOnTouchListener<IItem<T, VH>> mOnTouchListener;
 
         //the listeners for onCreateViewHolder or onBindViewHolder
         private IOnCreateViewHolderListener mOnCreateViewHolderListener;// = new OnCreateViewHolderListenerImpl();
@@ -70,7 +70,7 @@ namespace FastAdapter.Core
          * @param onClickListener the OnClickListener which will be used for a single item
          * @return this
          */
-        public FastAdapter<IItem> WithOnClickListener(IOnClickListener<IItem> onClickListener)
+        public FastAdapter<T, VH> WithOnClickListener(IOnClickListener<IItem<T, VH>> onClickListener)
         {
             this.mOnClickListener = onClickListener;
             return this;
@@ -82,7 +82,7 @@ namespace FastAdapter.Core
          * @param onPreClickListener the OnPreClickListener which will be called after a single item was clicked and all internal methods are done
          * @return this
          */
-        public FastAdapter<IItem> WithOnPreClickListener(IOnClickListener<IItem> onPreClickListener)
+        public FastAdapter<T, VH> WithOnPreClickListener(IOnClickListener<IItem<T, VH>> onPreClickListener)
         {
             this.mOnPreClickListener = onPreClickListener;
             return this;
@@ -94,7 +94,7 @@ namespace FastAdapter.Core
          * @param onLongClickListener the OnLongClickListener which will be used for a single item
          * @return this
          */
-        public FastAdapter<IItem> WithOnLongClickListener(IOnLongClickListener<IItem> onLongClickListener)
+        public FastAdapter<T, VH> WithOnLongClickListener(IOnLongClickListener<IItem<T, VH>> onLongClickListener)
         {
             this.mOnLongClickListener = onLongClickListener;
             return this;
@@ -106,7 +106,7 @@ namespace FastAdapter.Core
          * @param onPreLongClickListener the OnLongClickListener which will be called after a single item was clicked and all internal methods are done
          * @return this
          */
-        public FastAdapter<IItem> WithOnPreLongClickListener(IOnLongClickListener<IItem> onPreLongClickListener)
+        public FastAdapter<T, VH> WithOnPreLongClickListener(IOnLongClickListener<IItem<T, VH>> onPreLongClickListener)
         {
             this.mOnPreLongClickListener = onPreLongClickListener;
             return this;
@@ -118,7 +118,7 @@ namespace FastAdapter.Core
          * @param onTouchListener the TouchListener which will be used for a single item
          * @return this
          */
-        public FastAdapter<IItem> WithOnTouchListener(IOnTouchListener<IItem> onTouchListener)
+        public FastAdapter<T, VH> WithOnTouchListener(IOnTouchListener<IItem<T, VH>> onTouchListener)
         {
             this.mOnTouchListener = onTouchListener;
             return this;
@@ -130,7 +130,7 @@ namespace FastAdapter.Core
          *
          * @param onCreateViewHolderListener the OnCreateViewHolderListener (you may use the OnCreateViewHolderListenerImpl)
          */
-        public FastAdapter<IItem> WithOnCreateViewHolderListener(IOnCreateViewHolderListener onCreateViewHolderListener)
+        public FastAdapter<T, VH> WithOnCreateViewHolderListener(IOnCreateViewHolderListener onCreateViewHolderListener)
         {
             this.mOnCreateViewHolderListener = onCreateViewHolderListener;
             return this;
@@ -142,7 +142,7 @@ namespace FastAdapter.Core
          *
          * @param onBindViewHolderListener the OnBindViewHolderListener
          */
-        public FastAdapter<IItem> WithOnBindViewHolderListener(IOnBindViewHolderListener onBindViewHolderListener)
+        public FastAdapter<T, VH> WithOnBindViewHolderListener(IOnBindViewHolderListener onBindViewHolderListener)
         {
             this.mOnBindViewHolderListener = onBindViewHolderListener;
             return this;
@@ -158,7 +158,7 @@ namespace FastAdapter.Core
      * @param selectWithItemUpdate true if notifyItemChanged should be called upon select
      * @return this
      */
-        public FastAdapter<IItem> WithSelectWithItemUpdate(bool selectWithItemUpdate)
+        public FastAdapter<T, VH> WithSelectWithItemUpdate(bool selectWithItemUpdate)
         {
             this.mSelectWithItemUpdate = selectWithItemUpdate;
             return this;
@@ -170,7 +170,7 @@ namespace FastAdapter.Core
          * @param multiSelect true to enable multiSelect
          * @return this
          */
-        public FastAdapter<IItem> WithMultiSelect(bool multiSelect)
+        public FastAdapter<T, VH> WithMultiSelect(bool multiSelect)
         {
             mMultiSelect = multiSelect;
             return this;
@@ -182,7 +182,7 @@ namespace FastAdapter.Core
          * @param selectOnLongClick false to do select via single click
          * @return this
          */
-        public FastAdapter<IItem> WithSelectOnLongClick(bool selectOnLongClick)
+        public FastAdapter<T, VH> WithSelectOnLongClick(bool selectOnLongClick)
         {
             mSelectOnLongClick = selectOnLongClick;
             return this;
@@ -194,7 +194,7 @@ namespace FastAdapter.Core
          * @param allowDeselection true if a user can deselect an already selected item via click
          * @return this
          */
-        public FastAdapter<IItem> WithAllowDeselection(bool allowDeselection)
+        public FastAdapter<T, VH> WithAllowDeselection(bool allowDeselection)
         {
             this.mAllowDeselection = allowDeselection;
             return this;
@@ -206,7 +206,7 @@ namespace FastAdapter.Core
          * @param selectable true if items are selectable
          * @return this
          */
-        public FastAdapter<IItem> WithSelectable(bool selectable)
+        public FastAdapter<T, VH> WithSelectable(bool selectable)
         {
             this.mSelectable = selectable;
             return this;
@@ -219,7 +219,7 @@ namespace FastAdapter.Core
          * @param mPositionBasedStateManagement false to enable the alternative "stateLess" stateManagement
          * @return this
          */
-        public FastAdapter<IItem> WithPositionBasedStateManagement(bool mPositionBasedStateManagement)
+        public FastAdapter<T, VH> WithPositionBasedStateManagement(bool mPositionBasedStateManagement)
         {
             this.mPositionBasedStateManagement = mPositionBasedStateManagement;
             return this;
@@ -248,7 +248,7 @@ namespace FastAdapter.Core
          * @param mOnlyOneExpandedItem true if there should be only one expanded, expandable item in the list
          * @return this
          */
-        public FastAdapter<IItem> WithOnlyOneExpandedItem(bool mOnlyOneExpandedItem)
+        public FastAdapter<T, VH> WithOnlyOneExpandedItem(bool mOnlyOneExpandedItem)
         {
             this.mOnlyOneExpandedItem = mOnlyOneExpandedItem;
             return this;
@@ -271,7 +271,7 @@ namespace FastAdapter.Core
          *                           recently supplied in Note: Otherwise it is null.
          * @return this
          */
-        public FastAdapter<IItem> withSavedInstanceState(Bundle savedInstanceState)
+        public FastAdapter<T, VH> withSavedInstanceState(Bundle savedInstanceState)
         {
             return WithSavedInstanceState(savedInstanceState, "");
         }
@@ -286,7 +286,7 @@ namespace FastAdapter.Core
          * @param prefix             a prefix added to the savedInstance key so we can store multiple states
          * @return this
          */
-        public FastAdapter<IItem> WithSavedInstanceState(Bundle savedInstanceState, string prefix)
+        public FastAdapter<T, VH> WithSavedInstanceState(Bundle savedInstanceState, string prefix)
         {
             if (savedInstanceState != null)
             {
@@ -322,7 +322,7 @@ namespace FastAdapter.Core
 
                     for (int i = 0; i < GetItemCount; i++)
                     {
-                        IItem item = GetItem(i);
+                        IItem<T, VH> item = GetItem(i);
                         string id = item.Identifaybale.ToString();
                         if (expandedItems != null && expandedItems.Contains(id))
                         {
@@ -346,7 +346,7 @@ namespace FastAdapter.Core
      *
      * @param adapter an adapter which extends the AbstractAdapter
      */
-        public void RegisterAdapter(AbstractAdapter<IItem> adapter)
+        public void RegisterAdapter(AbstractAdapter<T, VH> adapter)
         {
             if (!mAdapters.ContainsKey(adapter.Order))
             {
@@ -358,9 +358,9 @@ namespace FastAdapter.Core
         /**
          * register a new type into the TypeInstances to be able to efficiently create thew ViewHolders
          *
-         * @param item an IItem which will be shown in the list
+         * @param item an IItem<T, VH> which will be shown in the list
          */
-        public void RegisterTypeInstance(IItem item)
+        public void RegisterTypeInstance(IItem<T, VH> item)
         {
             if (!mTypeInstances.ContainsKey(item.Type))
             {
@@ -374,7 +374,7 @@ namespace FastAdapter.Core
          * @param type the int type of the item
          * @return the Item typeInstance
          */
-        public IItem GetTypeInstance(int type)
+        public IItem<T, VH> GetTypeInstance(int type)
         {
             return mTypeInstances[type];
         }
@@ -388,7 +388,7 @@ namespace FastAdapter.Core
          */
         public int GetHolderAdapterPosition(RecyclerView.ViewHolder holder)
         {
-            return holder.GetAdapterPosition();
+            return holder.AdapterPosition;
         }
 
         /**
@@ -411,14 +411,14 @@ namespace FastAdapter.Core
                 if (pos != RecyclerView.NoPosition)
                 {
                     bool consumed = false;
-                    RelativeInfo<IItem> relativeInfo = GetRelativeInfo(pos);
+                    RelativeInfo<IItem<T, VH>> relativeInfo = GetRelativeInfo(pos);
                     Item item = relativeInfo.item;
                     if (item != null && item.isEnabled())
                     {
                         //on the very first we call the click listener from the item itself (if defined)
                         if (item is IClickable && ((IClickable)item).OnPreItemClickListener != null)
                         {
-                            consumed = ((IClickable<IItem>)item).OnPreItemClickListener.OnClick(v, relativeInfo.Adapter, item, pos);
+                            consumed = ((IClickable<IItem<T, VH>>)item).OnPreItemClickListener.OnClick(v, relativeInfo.Adapter, item, pos);
                         }
 
                         //first call the onPreClickListener which would allow to prevent executing of any following code, including selection
@@ -458,7 +458,7 @@ namespace FastAdapter.Core
                         //before calling the global adapter onClick listener call the item specific onClickListener
                         if (item is IClickable && ((IClickable)item).OnItemClickListener != null)
                         {
-                            consumed = ((IClickable<IItem>)item).OnItemClickListener.OnClick(v, relativeInfo.Adapter, item, pos);
+                            consumed = ((IClickable<IItem<T, VH>>)item).OnItemClickListener.OnClick(v, relativeInfo.Adapter, item, pos);
                         }
 
                         //call the normal click listener after selection was handlded
@@ -477,7 +477,7 @@ namespace FastAdapter.Core
                 if (pos != RecyclerView.NoPosition)
                 {
                     bool consumed = false;
-                    RelativeInfo<IItem> relativeInfo = getRelativeInfo(pos);
+                    RelativeInfo<IItem<T, VH>> relativeInfo = getRelativeInfo(pos);
                     if (relativeInfo.Item != null && relativeInfo.Item.isEnabled())
                     {
                     //first call the OnPreLongClickListener which would allow to prevent executing of any following code, including selection
@@ -511,7 +511,7 @@ namespace FastAdapter.Core
                     int pos = GetHolderAdapterPosition(holder);
                     if (pos != RecyclerView.NoPosition)
                     {
-                        RelativeInfo<IItem> relativeInfo = getRelativeInfo(pos);
+                        RelativeInfo<IItem<T, VH>> relativeInfo = getRelativeInfo(pos);
                         return mOnTouchListener.OnTouch(s, e.Event, relativeInfo.Adapter, relativeInfo.Item, pos);
                     }
                 }
@@ -539,7 +539,7 @@ namespace FastAdapter.Core
          * @param item the item which is searched for
          * @return the global position, or -1 if not found
          */
-        public int GetPosition(IItem item)
+        public int GetPosition(IItem<T, VH> item)
         {
             if (item.Identifaybale == -1)
             {
@@ -551,7 +551,7 @@ namespace FastAdapter.Core
             int length = mAdapters.Count;
             for (int i = 0; i < length; i++)
             {
-                IAdapter<IItem> adapter = mAdapters[i];
+                IAdapter<IItem<T, VH>> adapter = mAdapters[i];
                 if (adapter.Order < 0)
                 {
                     continue;
@@ -569,12 +569,12 @@ namespace FastAdapter.Core
         }
 
         /**
-         * gets the IItem by a position, from all registered adapters
+         * gets the IItem<T, VH> by a position, from all registered adapters
          *
          * @param position the global position
-         * @return the found IItem or null
+         * @return the found IItem<T, VH> or null
          */
-        public IItem GetItem(int position)
+        public IItem<T, VH> GetItem(int position)
         {
             //if we are out of range just return null
             if (position < 0 || position >= mGlobalSize)
@@ -629,7 +629,7 @@ namespace FastAdapter.Core
         }
 
         /**
-         * finds the int ItemViewType from the IItem which exists at the given position
+         * finds the int ItemViewType from the IItem<T, VH> which exists at the given position
          *
          * @param position the global position
          * @return the viewType for this position
@@ -641,7 +641,7 @@ namespace FastAdapter.Core
         }
 
         /**
-         * finds the int ItemId from the IItem which exists at the given position
+         * finds the int ItemId from the IItem<T, VH> which exists at the given position
          *
          * @param position the global position
          * @return the itemId for this position
@@ -715,10 +715,10 @@ namespace FastAdapter.Core
         }
 
 
-        public class RelativeInfo<IItem> 
+        public class RelativeInfo<IItem<T, VH>> 
         {
-            public IAdapter<IItem> Adapter { get; set; }
-            public IItem Item { get; set; }
+            public IAdapter<IItem<T, VH>> Adapter { get; set; }
+            public IItem<T, VH> Item { get; set; }
             public int Position { get; set; } = -1;
         }
     }

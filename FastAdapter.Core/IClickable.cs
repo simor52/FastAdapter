@@ -3,7 +3,7 @@ using FastAdapter.Core.Listenrs;
 
 namespace FastAdapter.Core
 {
-    public interface IClickable<IItem>
+    public interface IClickable<T, VH> where VH : RecyclerView.ViewHolder where T : class
     {
 
         /// <summary>
@@ -11,23 +11,23 @@ namespace FastAdapter.Core
         /// </summary>
         /// <param name="onItemPreClickListener">The pre-click listner to be added.</param>
         /// <returns>Returns this item</returns>
-        IItem withOnItemPreClickListener(IOnClickListener<IItem> onItemPreClickListener);
+        IItem<T, VH> withOnItemPreClickListener(IOnClickListener<IItem<T, VH>> onItemPreClickListener);
 
         /// <summary>
         /// Gets the pre-click listner for this item.
         /// </summary>
-        IOnClickListener<IItem> OnPreItemClickListener { get; }
+        IOnClickListener<IItem<T, VH>> OnPreItemClickListener { get; }
 
         /// <summary>
         /// Sets the click listner for this item.
         /// </summary>
         /// <param name="onItemClickListener">The click listner to be added.</param>
         /// <returns>Returns this item</returns>
-        IItem withOnItemClickListener(IOnClickListener<IItem> onItemClickListener);
+        IItem<T, VH> withOnItemClickListener(IOnClickListener<IItem<T, VH>> onItemClickListener);
 
         /// <summary>
         /// Gets the click listner for this item.
         /// </summary>
-        IOnClickListener<IItem> OnItemClickListener { get; }
+        IOnClickListener<IItem<T, VH>> OnItemClickListener { get; }
     }
 }
